@@ -24,7 +24,7 @@ training:
 loss:
   one_step_weight: 1.0
   rollout_weight: 0.0
-  rollout_train_horizon: 30
+  rollout_train_horizon: 20
   multi_rollout_horizons: [5, 15]
   rollout_loss_type: huber
   huber_beta: 1.0
@@ -40,15 +40,20 @@ loss:
     weight_start: 0.0
     weight_end: 0.0
   curriculum:
-    enabled: false
+    enabled: true
     start_after_updates: 3000
     ramp_updates: 9000
-    one_step_weight_start: 1.2
-    one_step_weight_end: 0.6
-    rollout_weight_start: 0.0
-    rollout_weight_end: 0.0
-    rollout_horizon_start: 5
+    one_step_weight_start: 1.0
+    one_step_weight_end: 1.0
+    rollout_weight_pre_start: 0.0
+    rollout_weight_start: 0.1
+    rollout_weight_end: 1.0
+    rollout_weight_start_after_updates: 9200
+    rollout_weight_ramp_updates: 8800
+    rollout_horizon_start: 20
     rollout_horizon_end: 40
+    rollout_horizon_start_after_updates: 18000
+    rollout_horizon_ramp_updates: 6000
 
 eval:
   warmup_steps: 10

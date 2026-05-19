@@ -20,6 +20,20 @@ def _linear_ramp(step: int, start_after: int, ramp_updates: int) -> float:
     return max(0.0, min(1.0, (step - start_after) / ramp_updates))
 
 
+def _scheduled_float(
+    step: int,
+    start_value: float,
+    end_value: float,
+    start_after: int,
+    ramp_updates: int,
+    pre_start_value: float | None = None,
+) -> float:
+    if pre_start_value is not None and step < start_after:
+        return pre_start_value
+    progress = _linear_ramp(step, start_after, ramp_updates)
+    return start_value + progress * (end_value - start_value)
+
+
 def _scheduled_loss_settings(model, cfg: dict) -> tuple[float, float, int, float]:
     loss_cfg = cfg["loss"]
     step = _training_step(model)
@@ -44,8 +58,31 @@ def _scheduled_loss_settings(model, cfg: dict) -> tuple[float, float, int, float
     horizon_start = int(curriculum.get("rollout_horizon_start", loss_cfg.get("rollout_train_horizon", 5)))
     horizon_end = int(curriculum.get("rollout_horizon_end", loss_cfg.get("rollout_train_horizon", horizon_start)))
     one_weight = one_start + progress * (one_end - one_start)
-    rollout_weight = roll_start + progress * (roll_end - roll_start)
-    horizon = int(round(horizon_start + progress * (horizon_end - horizon_start)))
+    if "rollout_weight_start_after_updates" in curriculum or "rollout_weight_ramp_updates" in curriculum:
+        rollout_weight = _scheduled_float(
+            step,
+            roll_start,
+            roll_end,
+            int(curriculum.get("rollout_weight_start_after_updates", curriculum.get("start_after_updates", 0))),
+            int(curriculum.get("rollout_weight_ramp_updates", curriculum.get("ramp_updates", 1))),
+            float(curriculum["rollout_weight_pre_start"]) if "rollout_weight_pre_start" in curriculum else None,
+        )
+    else:
+        rollout_weight = roll_start + progress * (roll_end - roll_start)
+    if "rollout_horizon_start_after_updates" in curriculum or "rollout_horizon_ramp_updates" in curriculum:
+        horizon = int(
+            round(
+                _scheduled_float(
+                    step,
+                    float(horizon_start),
+                    float(horizon_end),
+                    int(curriculum.get("rollout_horizon_start_after_updates", curriculum.get("start_after_updates", 0))),
+                    int(curriculum.get("rollout_horizon_ramp_updates", curriculum.get("ramp_updates", 1))),
+                )
+            )
+        )
+    else:
+        horizon = int(round(horizon_start + progress * (horizon_end - horizon_start)))
     return one_weight, rollout_weight, max(1, horizon), progress
 
 
