@@ -94,6 +94,46 @@ def rollout_loss(
     return F.mse_loss(pred_norm, target_norm)
 
 
+def vpt_surrogate_loss(
+    model,
+    states: torch.Tensor,
+    actions: torch.Tensor,
+    normalizer,
+    warmup_steps: int,
+    horizon: int,
+    loss_cfg: dict,
+) -> torch.Tensor:
+    """Differentiable proxy for VPT80@0.25.
+
+    Official VPT80@0.25 asks whether at least 80% of windows stay below
+    step-wise nMSE 0.25. The hard threshold and percentile are not useful as a
+    direct training loss, so this penalizes the 80th percentile step nMSE when
+    it approaches or crosses the threshold.
+    """
+    needed_states = int(warmup_steps) + int(horizon) + 1
+    if states.shape[1] < needed_states:
+        raise ValueError(
+            "training.train_sequence_length is too short for VPT surrogate loss: "
+            f"need at least {needed_states - 1} actions for warmup={warmup_steps}, horizon={horizon}."
+        )
+    max_start = states.shape[1] - needed_states
+    if max_start > 0:
+        start = int(torch.randint(0, max_start + 1, (), device=states.device).item())
+    else:
+        start = 0
+    sub_states = states[:, start : start + needed_states]
+    sub_actions = actions[:, start : start + int(warmup_steps) + int(horizon)]
+    preds = open_loop_rollout(model, sub_states, sub_actions, normalizer, warmup_steps=warmup_steps, horizon=horizon)
+    targets = sub_states[:, warmup_steps + 1 : warmup_steps + 1 + horizon]
+    obs_std = torch.as_tensor(normalizer.obs_std, dtype=preds.dtype, device=preds.device).clamp_min(1e-6)
+    step_nmse = torch.mean(((preds - targets) / obs_std) ** 2, dim=-1)
+    percentile = float(loss_cfg.get("vpt_percentile", 0.80))
+    threshold = float(loss_cfg.get("vpt_threshold", 0.25))
+    margin = max(float(loss_cfg.get("vpt_margin", 0.05)), 1e-6)
+    q_nmse = torch.quantile(step_nmse, percentile, dim=0)
+    return F.softplus((q_nmse - threshold) / margin).mean() * margin
+
+
 def _multi_rollout_horizons(loss_cfg: dict, horizon: int) -> list[int]:
     raw = loss_cfg.get("multi_rollout_horizons")
     if raw is None:
@@ -146,11 +186,26 @@ def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
         horizon=horizon,
         loss_cfg=loss_cfg,
     )
-    total = one_weight * one + rollout_weight * roll
+    vpt_weight = float(loss_cfg.get("vpt_surrogate_weight", 0.0))
+    if vpt_weight > 0.0:
+        vpt = vpt_surrogate_loss(
+            model,
+            states,
+            actions,
+            normalizer,
+            warmup_steps=warmup,
+            horizon=int(loss_cfg.get("vpt_surrogate_horizon", horizon)),
+            loss_cfg=loss_cfg,
+        )
+    else:
+        vpt = states.new_tensor(0.0)
+    total = one_weight * one + rollout_weight * roll + vpt_weight * vpt
     return total, {
         "loss/total": float(total.detach().cpu()),
         "loss/one_step": float(one.detach().cpu()),
         "loss/rollout": float(roll.detach().cpu()),
+        "loss/vpt_surrogate": float(vpt.detach().cpu()),
+        "loss/vpt_surrogate_weight": vpt_weight,
         "loss/one_step_weight": one_weight,
         "loss/rollout_weight": rollout_weight,
         "loss/rollout_horizon": float(horizon),

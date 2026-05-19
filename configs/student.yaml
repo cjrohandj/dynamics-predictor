@@ -27,6 +27,11 @@ loss:
   rollout_train_horizon: 30
   rollout_loss_type: huber
   huber_beta: 1.0
+  vpt_surrogate_weight: 0.2
+  vpt_surrogate_horizon: 40
+  vpt_threshold: 0.25
+  vpt_percentile: 0.80
+  vpt_margin: 0.05
   curriculum:
     enabled: true
     start_after_updates: 3000
