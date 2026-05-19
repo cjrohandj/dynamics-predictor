@@ -25,6 +25,8 @@ loss:
   one_step_weight: 1.0
   rollout_weight: 1.5
   rollout_train_horizon: 30
+  rollout_loss_type: huber
+  huber_beta: 1.0
   curriculum:
     enabled: true
     start_after_updates: 3000

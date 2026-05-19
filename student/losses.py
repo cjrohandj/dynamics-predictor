@@ -60,7 +60,16 @@ def one_step_delta_loss(model, states: torch.Tensor, actions: torch.Tensor, norm
     return F.mse_loss(pred_norm, target_norm)
 
 
-def rollout_loss(model, states: torch.Tensor, actions: torch.Tensor, normalizer, warmup_steps: int, horizon: int) -> torch.Tensor:
+def rollout_loss(
+    model,
+    states: torch.Tensor,
+    actions: torch.Tensor,
+    normalizer,
+    warmup_steps: int,
+    horizon: int,
+    loss_type: str = "mse",
+    huber_beta: float = 1.0,
+) -> torch.Tensor:
     # Train local open-loop stability at random positions, not only at the
     # beginning of each stored window.
     needed_states = int(warmup_steps) + int(horizon) + 1
@@ -80,16 +89,29 @@ def rollout_loss(model, states: torch.Tensor, actions: torch.Tensor, normalizer,
     targets = sub_states[:, warmup_steps + 1 : warmup_steps + 1 + horizon]
     pred_norm = normalizer.normalize_obs(preds)
     target_norm = normalizer.normalize_obs(targets)
+    if loss_type == "huber":
+        return F.smooth_l1_loss(pred_norm, target_norm, beta=float(huber_beta))
     return F.mse_loss(pred_norm, target_norm)
 
 
 def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
+    loss_cfg = cfg["loss"]
     states = batch["states"]
     actions = batch["actions"]
     one = one_step_delta_loss(model, states, actions, normalizer)
     one_weight, rollout_weight, horizon, progress = _scheduled_loss_settings(model, cfg)
     warmup = int(cfg["eval"].get("warmup_steps", 5))
-    roll = rollout_loss(model, states, actions, normalizer, warmup_steps=warmup, horizon=horizon)
+    rollout_loss_type = str(loss_cfg.get("rollout_loss_type", "mse"))
+    roll = rollout_loss(
+        model,
+        states,
+        actions,
+        normalizer,
+        warmup_steps=warmup,
+        horizon=horizon,
+        loss_type=rollout_loss_type,
+        huber_beta=float(loss_cfg.get("huber_beta", 1.0)),
+    )
     total = one_weight * one + rollout_weight * roll
     return total, {
         "loss/total": float(total.detach().cpu()),
