@@ -9,7 +9,7 @@ model:
 
 training:
   batch_size: 128
-  updates: 5000
+  updates: 7000
   smoke_updates: 120
   train_sequence_length: 96
   learning_rate: 1.0e-3
@@ -28,7 +28,7 @@ loss:
   curriculum:
     enabled: true
     start_after_updates: 1500
-    ramp_updates: 2500
+    ramp_updates: 3500
     one_step_weight_start: 1.0
     one_step_weight_end: 0.8
     rollout_weight_start: 0.3
