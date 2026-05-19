@@ -27,6 +27,7 @@ loss:
   rollout_train_horizon: 30
   rollout_loss_type: huber
   huber_beta: 1.0
+  multi_rollout_horizons: [5, 15]
   curriculum:
     enabled: true
     start_after_updates: 3000

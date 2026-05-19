@@ -94,6 +94,42 @@ def rollout_loss(
     return F.mse_loss(pred_norm, target_norm)
 
 
+def _multi_rollout_horizons(loss_cfg: dict, horizon: int) -> list[int]:
+    raw = loss_cfg.get("multi_rollout_horizons")
+    if raw is None:
+        return [int(horizon)]
+    horizons = [int(h) for h in raw]
+    if int(horizon) not in horizons:
+        horizons.append(int(horizon))
+    return sorted({max(1, h) for h in horizons if h <= int(horizon)})
+
+
+def multi_rollout_loss(
+    model,
+    states: torch.Tensor,
+    actions: torch.Tensor,
+    normalizer,
+    warmup_steps: int,
+    horizon: int,
+    loss_cfg: dict,
+) -> tuple[torch.Tensor, list[int]]:
+    horizons = _multi_rollout_horizons(loss_cfg, horizon)
+    losses = [
+        rollout_loss(
+            model,
+            states,
+            actions,
+            normalizer,
+            warmup_steps=warmup_steps,
+            horizon=h,
+            loss_type=str(loss_cfg.get("rollout_loss_type", "mse")),
+            huber_beta=float(loss_cfg.get("huber_beta", 1.0)),
+        )
+        for h in horizons
+    ]
+    return torch.stack(losses).mean(), horizons
+
+
 def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
     loss_cfg = cfg["loss"]
     states = batch["states"]
@@ -101,16 +137,14 @@ def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
     one = one_step_delta_loss(model, states, actions, normalizer)
     one_weight, rollout_weight, horizon, progress = _scheduled_loss_settings(model, cfg)
     warmup = int(cfg["eval"].get("warmup_steps", 5))
-    rollout_loss_type = str(loss_cfg.get("rollout_loss_type", "mse"))
-    roll = rollout_loss(
+    roll, rollout_horizons = multi_rollout_loss(
         model,
         states,
         actions,
         normalizer,
         warmup_steps=warmup,
         horizon=horizon,
-        loss_type=rollout_loss_type,
-        huber_beta=float(loss_cfg.get("huber_beta", 1.0)),
+        loss_cfg=loss_cfg,
     )
     total = one_weight * one + rollout_weight * roll
     return total, {
@@ -120,5 +154,6 @@ def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
         "loss/one_step_weight": one_weight,
         "loss/rollout_weight": rollout_weight,
         "loss/rollout_horizon": float(horizon),
+        "loss/rollout_num_horizons": float(len(rollout_horizons)),
         "loss/curriculum_progress": progress,
     }
