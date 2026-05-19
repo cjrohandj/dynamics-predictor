@@ -25,7 +25,7 @@ loss:
   one_step_weight: 1.0
   rollout_weight: 1.5
   rollout_train_horizon: 30
-  multi_rollout_horizons: [5, 10, 20, 40]
+  multi_rollout_horizons: [5, 15]
   rollout_loss_type: huber
   huber_beta: 1.0
   vpt_surrogate_weight: 1.0
@@ -35,10 +35,10 @@ loss:
   vpt_margin: 0.05
   vpt_surrogate_schedule:
     enabled: true
-    start_after_updates: 3000
+    start_after_updates: 6000
     ramp_updates: 18000
-    weight_start: 0.05
-    weight_end: 1.0
+    weight_start: 0.01
+    weight_end: 0.5
   curriculum:
     enabled: true
     start_after_updates: 3000
