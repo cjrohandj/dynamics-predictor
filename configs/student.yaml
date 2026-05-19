@@ -33,6 +33,12 @@ loss:
   vpt_threshold: 0.25
   vpt_percentile: 0.80
   vpt_margin: 0.05
+  vpt_surrogate_schedule:
+    enabled: true
+    start_after_updates: 3000
+    ramp_updates: 18000
+    weight_start: 0.05
+    weight_end: 1.0
   curriculum:
     enabled: true
     start_after_updates: 3000

@@ -49,6 +49,23 @@ def _scheduled_loss_settings(model, cfg: dict) -> tuple[float, float, int, float
     return one_weight, rollout_weight, max(1, horizon), progress
 
 
+def _scheduled_vpt_weight(loss_cfg: dict, step: int) -> tuple[float, float]:
+    base_weight = float(loss_cfg.get("vpt_surrogate_weight", 0.0))
+    schedule = loss_cfg.get("vpt_surrogate_schedule", {})
+    if not bool(schedule.get("enabled", False)):
+        return base_weight, 1.0
+
+    progress = _linear_ramp(
+        step,
+        int(schedule.get("start_after_updates", 0)),
+        int(schedule.get("ramp_updates", 1)),
+    )
+    start_weight = float(schedule.get("weight_start", 0.0))
+    end_weight = float(schedule.get("weight_end", base_weight))
+    weight = start_weight + progress * (end_weight - start_weight)
+    return weight, progress
+
+
 def one_step_delta_loss(model, states: torch.Tensor, actions: torch.Tensor, normalizer) -> torch.Tensor:
     obs = states[:, :-1].reshape(-1, states.shape[-1])
     act = actions.reshape(-1, actions.shape[-1])
@@ -176,6 +193,7 @@ def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
     actions = batch["actions"]
     one = one_step_delta_loss(model, states, actions, normalizer)
     one_weight, rollout_weight, horizon, progress = _scheduled_loss_settings(model, cfg)
+    step = int(getattr(model, "_student_loss_step", 0))
     warmup = int(cfg["eval"].get("warmup_steps", 5))
     roll, rollout_horizons = multi_rollout_loss(
         model,
@@ -186,7 +204,7 @@ def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
         horizon=horizon,
         loss_cfg=loss_cfg,
     )
-    vpt_weight = float(loss_cfg.get("vpt_surrogate_weight", 0.0))
+    vpt_weight, vpt_progress = _scheduled_vpt_weight(loss_cfg, step)
     if vpt_weight > 0.0:
         vpt = vpt_surrogate_loss(
             model,
@@ -206,6 +224,7 @@ def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
         "loss/rollout": float(roll.detach().cpu()),
         "loss/vpt_surrogate": float(vpt.detach().cpu()),
         "loss/vpt_surrogate_weight": vpt_weight,
+        "loss/vpt_surrogate_progress": vpt_progress,
         "loss/one_step_weight": one_weight,
         "loss/rollout_weight": rollout_weight,
         "loss/rollout_horizon": float(horizon),
