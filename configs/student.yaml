@@ -9,7 +9,7 @@ model:
 
 training:
   batch_size: 256
-  updates: 24000
+  updates: 100000
   smoke_updates: 120
   train_sequence_length: 96
   learning_rate: 0.2e-3
