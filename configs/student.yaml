@@ -3,13 +3,13 @@ device: auto
 torch_num_threads: 1
 
 model:
-  hidden_dim: 64
-  num_layers: 2
+  hidden_dim: 32
+  num_layers: 1
   use_gru: false
 
 training:
   batch_size: 256
-  updates: 9000
+  updates: 12000
   smoke_updates: 120
   train_sequence_length: 96
   learning_rate: 0.5e-3
@@ -24,7 +24,7 @@ training:
 loss:
   one_step_weight: 1.0
   rollout_weight: 1.5
-  rollout_train_horizon: 30
+  rollout_train_horizon: 40
   rollout_loss_type: huber
   huber_beta: 1.0
   curriculum:
