@@ -3,8 +3,8 @@ device: auto
 torch_num_threads: 1
 
 model:
-  hidden_dim: 32
-  num_layers: 1
+  hidden_dim: 64
+  num_layers: 2
   use_gru: false
 
 training:
@@ -24,7 +24,7 @@ training:
 loss:
   one_step_weight: 1.0
   rollout_weight: 1.5
-  rollout_train_horizon: 40
+  rollout_train_horizon: 30
   rollout_loss_type: huber
   huber_beta: 1.0
   curriculum:
@@ -32,11 +32,11 @@ loss:
     start_after_updates: 3000
     ramp_updates: 6000
     one_step_weight_start: 1.2
-    one_step_weight_end: 0.8
+    one_step_weight_end: 0.6
     rollout_weight_start: 0.3
-    rollout_weight_end: 1.3
+    rollout_weight_end: 1.5
     rollout_horizon_start: 5
-    rollout_horizon_end: 30
+    rollout_horizon_end: 35
 
 eval:
   warmup_steps: 10
