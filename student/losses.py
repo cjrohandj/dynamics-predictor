@@ -8,6 +8,47 @@ import torch.nn.functional as F
 from .rollout import open_loop_rollout
 
 
+def _training_step(model) -> int:
+    step = int(getattr(model, "_student_loss_step", 0)) + 1
+    setattr(model, "_student_loss_step", step)
+    return step
+
+
+def _linear_ramp(step: int, start_after: int, ramp_updates: int) -> float:
+    if ramp_updates <= 0:
+        return 1.0
+    return max(0.0, min(1.0, (step - start_after) / ramp_updates))
+
+
+def _scheduled_loss_settings(model, cfg: dict) -> tuple[float, float, int, float]:
+    loss_cfg = cfg["loss"]
+    step = _training_step(model)
+    curriculum = loss_cfg.get("curriculum", {})
+    if not bool(curriculum.get("enabled", False)):
+        return (
+            float(loss_cfg.get("one_step_weight", 1.0)),
+            float(loss_cfg.get("rollout_weight", 0.3)),
+            int(loss_cfg.get("rollout_train_horizon", 5)),
+            1.0,
+        )
+
+    progress = _linear_ramp(
+        step,
+        int(curriculum.get("start_after_updates", 0)),
+        int(curriculum.get("ramp_updates", 1)),
+    )
+    one_start = float(curriculum.get("one_step_weight_start", loss_cfg.get("one_step_weight", 1.0)))
+    one_end = float(curriculum.get("one_step_weight_end", loss_cfg.get("one_step_weight", one_start)))
+    roll_start = float(curriculum.get("rollout_weight_start", loss_cfg.get("rollout_weight", 0.3)))
+    roll_end = float(curriculum.get("rollout_weight_end", loss_cfg.get("rollout_weight", roll_start)))
+    horizon_start = int(curriculum.get("rollout_horizon_start", loss_cfg.get("rollout_train_horizon", 5)))
+    horizon_end = int(curriculum.get("rollout_horizon_end", loss_cfg.get("rollout_train_horizon", horizon_start)))
+    one_weight = one_start + progress * (one_end - one_start)
+    rollout_weight = roll_start + progress * (roll_end - roll_start)
+    horizon = int(round(horizon_start + progress * (horizon_end - horizon_start)))
+    return one_weight, rollout_weight, max(1, horizon), progress
+
+
 def one_step_delta_loss(model, states: torch.Tensor, actions: torch.Tensor, normalizer) -> torch.Tensor:
     obs = states[:, :-1].reshape(-1, states.shape[-1])
     act = actions.reshape(-1, actions.shape[-1])
@@ -43,16 +84,19 @@ def rollout_loss(model, states: torch.Tensor, actions: torch.Tensor, normalizer,
 
 
 def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
-    loss_cfg = cfg["loss"]
     states = batch["states"]
     actions = batch["actions"]
     one = one_step_delta_loss(model, states, actions, normalizer)
-    horizon = int(loss_cfg.get("rollout_train_horizon", 5))
+    one_weight, rollout_weight, horizon, progress = _scheduled_loss_settings(model, cfg)
     warmup = int(cfg["eval"].get("warmup_steps", 5))
     roll = rollout_loss(model, states, actions, normalizer, warmup_steps=warmup, horizon=horizon)
-    total = float(loss_cfg.get("one_step_weight", 1.0)) * one + float(loss_cfg.get("rollout_weight", 0.3)) * roll
+    total = one_weight * one + rollout_weight * roll
     return total, {
         "loss/total": float(total.detach().cpu()),
         "loss/one_step": float(one.detach().cpu()),
         "loss/rollout": float(roll.detach().cpu()),
+        "loss/one_step_weight": one_weight,
+        "loss/rollout_weight": rollout_weight,
+        "loss/rollout_horizon": float(horizon),
+        "loss/curriculum_progress": progress,
     }
