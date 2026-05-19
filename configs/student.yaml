@@ -3,9 +3,9 @@ device: auto
 torch_num_threads: 1
 
 model:
-  hidden_dim: 128
+  hidden_dim: 64
   num_layers: 2
-  use_gru: true
+  use_gru: false
 
 training:
   batch_size: 256
