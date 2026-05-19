@@ -123,8 +123,20 @@ def plot_curriculum_vpt_diagnostics(
     return output_path
 
 
+def plot_curriculum_vpt_diagnostics_from_file(
+    log_path: str | Path = "artifacts/student/train.log",
+    output_path: str | Path = "artifacts/student/plots/curriculum_vpt_diagnostics.png",
+    *,
+    metric: str = "VPT80@0.25",
+) -> Path:
+    """Read a saved training log file and plot curriculum/VPT diagnostics."""
+    log_text = Path(log_path).read_text(encoding="utf-8")
+    return plot_curriculum_vpt_diagnostics(log_text, output_path, metric=metric)
+
+
 __all__ = [
     "compute_scoreboard_metrics",
     "parse_train_log",
     "plot_curriculum_vpt_diagnostics",
+    "plot_curriculum_vpt_diagnostics_from_file",
 ]
