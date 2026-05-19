@@ -9,10 +9,10 @@ model:
 
 training:
   batch_size: 256
-  updates: 24000
+  updates: 12000
   smoke_updates: 120
   train_sequence_length: 96
-  learning_rate: 1.2e-3
+  learning_rate: 1.5e-3
   grad_clip_norm: 10.0
   eval_every: 200
   smoke_eval_every: 20
@@ -28,21 +28,21 @@ loss:
   multi_rollout_horizons: [5, 15]
   rollout_loss_type: huber
   huber_beta: 1.0
-  vpt_surrogate_weight: 1.0
+  vpt_surrogate_weight: 0.0
   vpt_surrogate_horizon: 40
   vpt_threshold: 0.25
   vpt_percentile: 0.80
   vpt_margin: 0.05
   vpt_surrogate_schedule:
-    enabled: true
+    enabled: false
     start_after_updates: 6000
-    ramp_updates: 18000
+    ramp_updates: 9000
     weight_start: 0.01
     weight_end: 0.5
   curriculum:
     enabled: true
     start_after_updates: 3000
-    ramp_updates: 18000
+    ramp_updates: 9000
     one_step_weight_start: 1.2
     one_step_weight_end: 0.6
     rollout_weight_start: 0.3
