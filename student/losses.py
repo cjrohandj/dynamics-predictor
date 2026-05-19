@@ -232,15 +232,19 @@ def compute_loss(model, batch: dict[str, torch.Tensor], normalizer, cfg: dict):
     one_weight, rollout_weight, horizon, progress = _scheduled_loss_settings(model, cfg)
     step = int(getattr(model, "_student_loss_step", 0))
     warmup = int(cfg["eval"].get("warmup_steps", 5))
-    roll, rollout_horizons = multi_rollout_loss(
-        model,
-        states,
-        actions,
-        normalizer,
-        warmup_steps=warmup,
-        horizon=horizon,
-        loss_cfg=loss_cfg,
-    )
+    if rollout_weight > 0.0:
+        roll, rollout_horizons = multi_rollout_loss(
+            model,
+            states,
+            actions,
+            normalizer,
+            warmup_steps=warmup,
+            horizon=horizon,
+            loss_cfg=loss_cfg,
+        )
+    else:
+        roll = states.new_tensor(0.0)
+        rollout_horizons = []
     vpt_weight, vpt_progress = _scheduled_vpt_weight(loss_cfg, step)
     if vpt_weight > 0.0:
         vpt = vpt_surrogate_loss(
