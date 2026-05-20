@@ -23,14 +23,14 @@ training:
   checkpoint_mode: max
 
 loss:
-  one_step_weight: 0.8
-  rollout_weight: 0.01
+  one_step_weight: 1.0
+  rollout_weight: 0.00
   rollout_train_horizon: 43
   multi_rollout_horizons:
   rollout_loss_type: huber
   huber_beta: 1.0
-  vpt_surrogate_weight: 0.0
-  vpt_surrogate_horizon: 40
+  vpt_surrogate_weight: 0.01
+  vpt_surrogate_horizon: 43
   vpt_threshold: 0.25
   vpt_percentile: 0.80
   vpt_margin: 0.05
