@@ -74,6 +74,12 @@ def _load_init_checkpoint(model, init_checkpoint: str | Path, device: torch.devi
     path = Path(init_checkpoint)
     if path.is_dir():
         path = path / "checkpoint.pt"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Initial checkpoint not found: {path}. "
+            "Pass either a checkpoint directory containing checkpoint.pt, "
+            "or the full path to a .pt checkpoint file."
+        )
     payload = torch.load(path, map_location=device, weights_only=False)
     model.load_state_dict(payload["model_state"])
     setattr(model, "_student_loss_step", int(payload.get("step", 0)))
