@@ -1,6 +1,6 @@
 seed: 289
 device: auto
-torch_num_threads: 1
+torch_num_threads: 8
 
 model:
   hidden_dim: 50
@@ -52,8 +52,8 @@ loss:
     rollout_weight_ramp_updates: 40000
     rollout_horizon_start: 30
     rollout_horizon_end: 55
-    rollout_horizon_start_after_updates: 0
-    rollout_horizon_ramp_updates: 150000
+    rollout_horizon_start_after_updates: 100000
+    rollout_horizon_ramp_updates: 180000
 
 eval:
   warmup_steps: 10
