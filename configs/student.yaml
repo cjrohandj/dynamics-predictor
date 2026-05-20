@@ -8,11 +8,11 @@ model:
   use_gru: false
 
 training:
-  batch_size: 1000
-  updates: 200000
+  batch_size: 5000
+  updates: 1000000
   smoke_updates: 120
   train_sequence_length: 96
-  learning_rate: 0.3e-3
+  learning_rate: 1e-4
   grad_clip_norm: 10.0
   eval_every: 200
   smoke_eval_every: 20
@@ -23,7 +23,7 @@ training:
 
 loss:
   one_step_weight: 1.0
-  rollout_weight: 0.01
+  rollout_weight: 0.00
   rollout_train_horizon: 20
   multi_rollout_horizons:
   rollout_loss_type: huber
@@ -35,21 +35,21 @@ loss:
   vpt_margin: 0.05
   vpt_surrogate_schedule:
     enabled: false
-    start_after_updates: 100000
-    ramp_updates: 70000
+    start_after_updates: 980000
+    ramp_updates: 5000
     weight_start: 0.01
-    weight_end: 0.1
+    weight_end: 1
   curriculum:
-    enabled: true
-    start_after_updates: 100000
-    ramp_updates: 70000
+    enabled: false
+    start_after_updates: 9800000
+    ramp_updates: 5000
     one_step_weight_start: 1.0
     one_step_weight_end: 1.0
     rollout_weight_pre_start: 0.01
     rollout_weight_start: 0.01
-    rollout_weight_end: 0.3
-    rollout_weight_start_after_updates: 100000
-    rollout_weight_ramp_updates: 70000
+    rollout_weight_end: 0.7
+    rollout_weight_start_after_updates: 9800000
+    rollout_weight_ramp_updates: 5000
     rollout_horizon_start: 10
     rollout_horizon_end: 55
     rollout_horizon_start_after_updates: 0
