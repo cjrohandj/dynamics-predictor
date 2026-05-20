@@ -9,11 +9,11 @@ model:
   use_gru: false
 
 training:
-  batch_size: 5000
-  updates: 200000
+  batch_size: 50
+  updates: 1000
   smoke_updates: 120
   train_sequence_length: 96
-  learning_rate: 100e-4
+  learning_rate: 1e-2
   grad_clip_norm: 10.0
   eval_every: 200
   smoke_eval_every: 20
@@ -24,8 +24,8 @@ training:
 
 loss:
   one_step_weight: 1.0
-  rollout_weight: 0.00
-  rollout_train_horizon: 20
+  rollout_weight: 0.001
+  rollout_train_horizon: 40
   multi_rollout_horizons:
   rollout_loss_type: huber
   huber_beta: 1.0
@@ -41,7 +41,7 @@ loss:
     weight_start: 0.01
     weight_end: 1
   curriculum:
-    enabled: true
+    enabled: false
     start_after_updates: 100000
     ramp_updates: 40000
     one_step_weight_start: 1.0
