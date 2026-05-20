@@ -3,8 +3,8 @@ device: auto
 torch_num_threads: 1
 
 model:
-  hidden_dim: 25
-  num_layers: 5
+  hidden_dim: 10000
+  num_layers: 10
   use_gru: false
 
 training:
@@ -12,7 +12,7 @@ training:
   updates: 100000
   smoke_updates: 120
   train_sequence_length: 96
-  learning_rate: 3.0e-3
+  learning_rate: 0.3e-3
   grad_clip_norm: 10.0
   eval_every: 200
   smoke_eval_every: 20
