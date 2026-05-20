@@ -8,8 +8,8 @@ model:
   use_gru: false
 
 training:
-  batch_size: 256
-  updates: 100000
+  batch_size: 1000
+  updates: 200000
   smoke_updates: 120
   train_sequence_length: 96
   learning_rate: 1e-3
