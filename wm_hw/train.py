@@ -70,7 +70,25 @@ def _is_better(value: float, best: float | None, mode: str) -> bool:
     raise ValueError(f"checkpoint_mode must be 'max' or 'min', got {mode!r}.")
 
 
-def train(config_path: str | Path, model_name: str, dataset_dir: str | Path, output_dir: str | Path, *, smoke: bool = False) -> dict[str, Any]:
+def _load_init_checkpoint(model, init_checkpoint: str | Path, device: torch.device) -> dict[str, Any]:
+    path = Path(init_checkpoint)
+    if path.is_dir():
+        path = path / "checkpoint.pt"
+    payload = torch.load(path, map_location=device, weights_only=False)
+    model.load_state_dict(payload["model_state"])
+    setattr(model, "_student_loss_step", int(payload.get("step", 0)))
+    return payload
+
+
+def train(
+    config_path: str | Path,
+    model_name: str,
+    dataset_dir: str | Path,
+    output_dir: str | Path,
+    *,
+    smoke: bool = False,
+    init_checkpoint: str | Path | None = None,
+) -> dict[str, Any]:
     cfg = load_config(config_path)
     set_seed(int(cfg.get("seed", 0)))
     torch.set_num_threads(int(cfg.get("torch_num_threads", 1)))
@@ -82,6 +100,10 @@ def train(config_path: str | Path, model_name: str, dataset_dir: str | Path, out
     normalizer.save(output_dir / "normalizer.json")
     device = _device(cfg)
     model = build_model(model_name, cfg).to(device)
+    init_payload: dict[str, Any] | None = None
+    if init_checkpoint is not None:
+        init_payload = _load_init_checkpoint(model, init_checkpoint, device)
+        print(f"[train] initialized from checkpoint={init_checkpoint} step={int(init_payload.get('step', 0))}")
     opt = torch.optim.Adam(model.parameters(), lr=float(cfg["training"]["learning_rate"]))
     updates = int(cfg["training"]["smoke_updates"] if smoke else cfg["training"]["updates"])
     batch_size = int(cfg["training"]["batch_size"])
@@ -133,6 +155,8 @@ def train(config_path: str | Path, model_name: str, dataset_dir: str | Path, out
     summary = {
         "model": model_name,
         "updates": updates,
+        "init_checkpoint": str(init_checkpoint) if init_checkpoint is not None else None,
+        "init_checkpoint_step": int(init_payload.get("step", 0)) if init_payload is not None else None,
         "checkpoint_metric": checkpoint_metric,
         "checkpoint_mode": checkpoint_mode,
         "best_score": best_score,
@@ -148,9 +172,10 @@ def main() -> None:
     parser.add_argument("--model", choices=["student"], default="student")
     parser.add_argument("--dataset-dir", required=True)
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--init-checkpoint", help="Warm-start model weights from a checkpoint directory or checkpoint.pt file.")
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(train(args.config, args.model, args.dataset_dir, args.output_dir, smoke=args.smoke), indent=2))
+    print(json.dumps(train(args.config, args.model, args.dataset_dir, args.output_dir, smoke=args.smoke, init_checkpoint=args.init_checkpoint), indent=2))
 
 
 if __name__ == "__main__":
