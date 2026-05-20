@@ -23,9 +23,9 @@ training:
   checkpoint_mode: max
 
 loss:
-  one_step_weight: 1.0
+  one_step_weight: 0.8
   rollout_weight: 0.01
-  rollout_train_horizon: 40
+  rollout_train_horizon: 43
   multi_rollout_horizons:
   rollout_loss_type: huber
   huber_beta: 1.0
@@ -41,7 +41,7 @@ loss:
     weight_start: 0.01
     weight_end: 1
   curriculum:
-    enabled: true
+    enabled: false
     start_after_updates: 0
     ramp_updates: 20000
     one_step_weight_start: 1.0
@@ -49,7 +49,7 @@ loss:
     rollout_weight_pre_start: 0.00
     rollout_weight_start: 0.01
     rollout_weight_end: 0.1
-    rollout_weight_start_after_updates: 0
+    rollout_weight_start_after_updates: 10000
     rollout_weight_ramp_updates: 20000
     rollout_horizon_start: 40
     rollout_horizon_end: 45
