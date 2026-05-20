@@ -8,8 +8,8 @@ model:
   use_gru: false
 
 training:
-  batch_size: 5000
-  updates: 1000000
+  batch_size: 2000
+  updates: 200000
   smoke_updates: 120
   train_sequence_length: 96
   learning_rate: 1e-4
@@ -40,17 +40,17 @@ loss:
     weight_start: 0.01
     weight_end: 1
   curriculum:
-    enabled: false
-    start_after_updates: 9800000
-    ramp_updates: 5000
+    enabled: true
+    start_after_updates: 100000
+    ramp_updates: 40000
     one_step_weight_start: 1.0
     one_step_weight_end: 1.0
-    rollout_weight_pre_start: 0.01
+    rollout_weight_pre_start: 0.00
     rollout_weight_start: 0.01
     rollout_weight_end: 0.7
-    rollout_weight_start_after_updates: 9800000
-    rollout_weight_ramp_updates: 5000
-    rollout_horizon_start: 10
+    rollout_weight_start_after_updates: 100000
+    rollout_weight_ramp_updates: 40000
+    rollout_horizon_start: 30
     rollout_horizon_end: 55
     rollout_horizon_start_after_updates: 0
     rollout_horizon_ramp_updates: 150000
