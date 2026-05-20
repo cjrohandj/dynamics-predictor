@@ -3,7 +3,7 @@ device: auto
 torch_num_threads: 1
 
 model:
-  hidden_dim: 15
+  hidden_dim: 20
   num_layers: 1
   use_gru: false
 
