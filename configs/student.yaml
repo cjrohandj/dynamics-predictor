@@ -35,10 +35,10 @@ loss:
   vpt_margin: 0.05
   vpt_surrogate_schedule:
     enabled: false
-    start_after_updates: 12000
-    ramp_updates: 12000
-    weight_start: 0.0
-    weight_end: 0.0
+    start_after_updates: 100000
+    ramp_updates: 70000
+    weight_start: 0.01
+    weight_end: 0.1
   curriculum:
     enabled: false
     start_after_updates: 3000
