@@ -45,14 +45,14 @@ loss:
     start_after_updates: 0
     ramp_updates: 20000
     one_step_weight_start: 1.0
-    one_step_weight_end: 0.8
+    one_step_weight_end: 1.0
     rollout_weight_pre_start: 0.00
     rollout_weight_start: 0.01
     rollout_weight_end: 0.1
     rollout_weight_start_after_updates: 0
     rollout_weight_ramp_updates: 20000
     rollout_horizon_start: 40
-    rollout_horizon_end: 50
+    rollout_horizon_end: 45
     rollout_horizon_start_after_updates: 0
     rollout_horizon_ramp_updates: 20000
 
