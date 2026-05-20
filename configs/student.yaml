@@ -10,7 +10,7 @@ model:
 
 training:
   batch_size: 256
-  updates: 10000
+  updates: 20000
   smoke_updates: 120
   train_sequence_length: 96
   learning_rate: 1e-5
@@ -41,20 +41,20 @@ loss:
     weight_start: 0.01
     weight_end: 1
   curriculum:
-    enabled: false
-    start_after_updates: 100000
-    ramp_updates: 40000
+    enabled: true
+    start_after_updates: 0
+    ramp_updates: 20000
     one_step_weight_start: 1.0
-    one_step_weight_end: 1.0
+    one_step_weight_end: 0.8
     rollout_weight_pre_start: 0.00
     rollout_weight_start: 0.01
-    rollout_weight_end: 0.7
-    rollout_weight_start_after_updates: 100000
-    rollout_weight_ramp_updates: 40000
-    rollout_horizon_start: 30
-    rollout_horizon_end: 55
-    rollout_horizon_start_after_updates: 100000
-    rollout_horizon_ramp_updates: 180000
+    rollout_weight_end: 0.1
+    rollout_weight_start_after_updates: 0
+    rollout_weight_ramp_updates: 20000
+    rollout_horizon_start: 40
+    rollout_horizon_end: 50
+    rollout_horizon_start_after_updates: 0
+    rollout_horizon_ramp_updates: 20000
 
 eval:
   warmup_steps: 10
