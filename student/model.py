@@ -1,7 +1,7 @@
-"""Student world model.
+"""LSTM world model.
 
-Students may replace this residual MLP with a GRU or another dynamics model,
-but the public interface must stay the same.
+The homework interface only permits a tensor hidden state, so this branch packs
+the LSTM hidden and cell states into one tensor of shape [batch, 2 * hidden].
 """
 
 from __future__ import annotations
@@ -21,29 +21,26 @@ class StudentWorldModel(nn.Module):
         delta_limit: float = 3.0,
     ):
         super().__init__()
-        self.use_gru = bool(use_gru)
+        self.use_gru = True
+        self.hidden_dim = int(hidden_dim)
         self.delta_limit = float(delta_limit)
         in_dim = obs_dim + act_dim
-        layers: list[nn.Module] = []
-        for _ in range(int(num_layers)):
-            layers += [nn.Linear(in_dim, hidden_dim), nn.SiLU()]
-            in_dim = hidden_dim
-        self.encoder = nn.Sequential(*layers)
-        self.gru = nn.GRUCell(hidden_dim, hidden_dim) if self.use_gru else None
-        self.head = nn.Linear(hidden_dim, obs_dim)
+        self.input_proj = nn.Linear(in_dim, self.hidden_dim)
+        self.cell = nn.LSTMCell(self.hidden_dim, self.hidden_dim)
+        self.skip = nn.Linear(in_dim, obs_dim, bias=False)
+        self.head = nn.Linear(self.hidden_dim, obs_dim)
 
     def initial_hidden(self, batch_size: int, device: torch.device):
-        if not self.use_gru:
-            return None
-        return torch.zeros(batch_size, self.gru.hidden_size, device=device)
+        return torch.zeros(batch_size, 2 * self.hidden_dim, device=device)
 
     def forward(self, obs_norm: torch.Tensor, act_norm: torch.Tensor, hidden=None):
-        feat = self.encoder(torch.cat([obs_norm, act_norm], dim=-1))
-        if self.gru is not None:
-            if hidden is None:
-                hidden = self.initial_hidden(obs_norm.shape[0], obs_norm.device)
-            hidden = self.gru(feat, hidden)
-            feat = hidden
-        raw_delta = self.head(feat)
+        x = torch.cat([obs_norm, act_norm], dim=-1)
+        if hidden is None or hidden.numel() == 0:
+            hidden = self.initial_hidden(obs_norm.shape[0], obs_norm.device)
+        h, c = torch.chunk(hidden, 2, dim=-1)
+        inp = torch.tanh(self.input_proj(x))
+        h, c = self.cell(inp, (h, c))
+        next_hidden = torch.cat([h, c], dim=-1)
+        raw_delta = self.skip(x) + self.head(h)
         delta = self.delta_limit * torch.tanh(raw_delta / self.delta_limit)
-        return delta, hidden
+        return delta, next_hidden
