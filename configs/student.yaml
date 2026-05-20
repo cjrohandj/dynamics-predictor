@@ -3,16 +3,16 @@ device: auto
 torch_num_threads: 1
 
 model:
-  hidden_dim: 1000
-  num_layers: 1
+  hidden_dim: 20
+  num_layers: 3
   use_gru: false
 
 training:
-  batch_size: 128
+  batch_size: 256
   updates: 100000
   smoke_updates: 120
   train_sequence_length: 96
-  learning_rate: 0.2e-3
+  learning_rate: 1.0e-3
   grad_clip_norm: 10.0
   eval_every: 200
   smoke_eval_every: 20
