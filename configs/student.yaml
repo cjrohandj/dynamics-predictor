@@ -4,8 +4,8 @@ device: auto
 torch_num_threads: 8
 
 model:
-  hidden_dim: 32
-  num_layers: 0
+  hidden_dim: 16
+  num_layers: 2
   use_gru: false
 
 training:
