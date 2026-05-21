@@ -42,17 +42,17 @@ loss:
     weight_end: 1
   curriculum:
     enabled: true
-    start_after_updates: 10000
-    ramp_updates: 0
+    start_after_updates: 0
+    ramp_updates: 10000
     one_step_weight_start: 1.0
     one_step_weight_end: 1.0
     rollout_weight_pre_start: 0.00
-    rollout_weight_start: 0.05
-    rollout_weight_end: 0.05
-    rollout_weight_start_after_updates: 10000
-    rollout_weight_ramp_updates: 0
+    rollout_weight_start: 0.01
+    rollout_weight_end: 0.1
+    rollout_weight_start_after_updates: 0
+    rollout_weight_ramp_updates: 10000
     rollout_horizon_start: 20
-    rollout_horizon_end: 40
+    rollout_horizon_end: 30
     rollout_horizon_start_after_updates: 10000
     rollout_horizon_ramp_updates: 10000
 
