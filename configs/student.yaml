@@ -29,7 +29,7 @@ loss:
   multi_rollout_horizons:
   rollout_loss_type: huber
   huber_beta: 1.0
-  vpt_surrogate_weight: 0.01
+  vpt_surrogate_weight: 0.00
   vpt_surrogate_horizon: 43
   vpt_threshold: 0.25
   vpt_percentile: 0.80
