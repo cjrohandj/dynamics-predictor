@@ -25,8 +25,8 @@ training:
 loss:
   one_step_weight: 1.0
   rollout_weight: 0.05
-  rollout_train_horizon: 60
-  multi_rollout_horizons: [10, 30, 60]
+  rollout_train_horizon: 40
+  multi_rollout_horizons: [10, 20, 40]
   rollout_loss_type: huber
   huber_beta: 0.5
   vpt_surrogate_weight: 0.0
@@ -51,10 +51,10 @@ loss:
     rollout_weight_end: 0.05
     rollout_weight_start_after_updates: 10000
     rollout_weight_ramp_updates: 0
-    rollout_horizon_start: 60
-    rollout_horizon_end: 60
+    rollout_horizon_start: 20
+    rollout_horizon_end: 40
     rollout_horizon_start_after_updates: 10000
-    rollout_horizon_ramp_updates: 0
+    rollout_horizon_ramp_updates: 10000
 
 eval:
   warmup_steps: 10
