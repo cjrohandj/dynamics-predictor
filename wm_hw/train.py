@@ -86,6 +86,17 @@ def _load_init_checkpoint(model, init_checkpoint: str | Path, device: torch.devi
     return payload
 
 
+def _load_init_optimizer(opt: torch.optim.Optimizer, payload: dict[str, Any]) -> bool:
+    optimizer_state = payload.get("optimizer_state")
+    if optimizer_state is None:
+        return False
+    try:
+        opt.load_state_dict(optimizer_state)
+    except ValueError as exc:
+        raise ValueError("Checkpoint optimizer_state is incompatible with the current optimizer/model.") from exc
+    return True
+
+
 def train(
     config_path: str | Path,
     model_name: str,
@@ -111,6 +122,13 @@ def train(
         init_payload = _load_init_checkpoint(model, init_checkpoint, device)
         print(f"[train] initialized from checkpoint={init_checkpoint} step={int(init_payload.get('step', 0))}")
     opt = torch.optim.Adam(model.parameters(), lr=float(cfg["training"]["learning_rate"]))
+    restored_optimizer_state = False
+    if init_payload is not None:
+        restored_optimizer_state = _load_init_optimizer(opt, init_payload)
+        if restored_optimizer_state:
+            print("[train] restored optimizer_state from checkpoint")
+        else:
+            print("[train] checkpoint has no optimizer_state; starting Adam fresh")
     updates = int(cfg["training"]["smoke_updates"] if smoke else cfg["training"]["updates"])
     batch_size = int(cfg["training"]["batch_size"])
     eval_every = int(cfg["training"]["smoke_eval_every"] if smoke else cfg["training"]["eval_every"])
@@ -152,6 +170,7 @@ def train(
                 save_checkpoint(
                     output_dir / "best_checkpoint",
                     model=model,
+                    optimizer=opt,
                     model_name=model_name,
                     config=cfg,
                     normalizer=normalizer.to_dict(),
@@ -163,6 +182,7 @@ def train(
         "updates": updates,
         "init_checkpoint": str(init_checkpoint) if init_checkpoint is not None else None,
         "init_checkpoint_step": int(init_payload.get("step", 0)) if init_payload is not None else None,
+        "restored_optimizer_state": restored_optimizer_state,
         "checkpoint_metric": checkpoint_metric,
         "checkpoint_mode": checkpoint_mode,
         "best_score": best_score,

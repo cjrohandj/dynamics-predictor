@@ -21,6 +21,7 @@ def save_checkpoint(
     checkpoint_dir: str | Path,
     *,
     model,
+    optimizer=None,
     model_name: str,
     config: dict[str, Any],
     normalizer: dict[str, Any],
@@ -30,17 +31,17 @@ def save_checkpoint(
     checkpoint_dir = Path(checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     path = checkpoint_dir / "checkpoint.pt"
-    torch.save(
-        {
-            "model_state": model.state_dict(),
-            "model_name": model_name,
-            "config": config,
-            "normalizer": normalizer,
-            "step": int(step),
-            "metrics": metrics,
-        },
-        path,
-    )
+    payload = {
+        "model_state": model.state_dict(),
+        "model_name": model_name,
+        "config": config,
+        "normalizer": normalizer,
+        "step": int(step),
+        "metrics": metrics,
+    }
+    if optimizer is not None:
+        payload["optimizer_state"] = optimizer.state_dict()
+    torch.save(payload, path)
     return path
 
 

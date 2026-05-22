@@ -11,7 +11,7 @@ import pytest
 from wm_hw.dataset import generate_dataset
 from wm_hw.eval_horizon import evaluate_checkpoint
 from wm_hw.export_model import export_compiled_model
-from wm_hw.plotting import plot_horizon_rmse, plot_survival_curve
+from wm_hw.plotting import plot_horizon_rmse, plot_survival_curve, plot_training_loss_vpt_from_log
 from wm_hw.train import train
 
 
@@ -35,6 +35,17 @@ def test_train_and_eval_smoke(tmp_path: Path, monkeypatch):
     vpt = np.load(tmp_path / "eval" / "per_window_vpt_0p25.npy")
     assert plot_survival_curve(metrics, plot_dir, vpt).exists()
     assert plot_horizon_rmse(metrics, plot_dir).exists()
+    train_log = tmp_path / "train.log"
+    train_log.write_text(
+        "\n".join(
+            [
+                "[train] update=1 loss/total=1.0 loss/one_step=0.8 loss/rollout=0.2 VPT80@0.25=3",
+                "[train] update=2 loss/total=0.7 loss/one_step=0.5 loss/rollout=0.15 VPT80@0.25=8",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert plot_training_loss_vpt_from_log(train_log, plot_dir).exists()
 
     compiled_dir = tmp_path / "compiled"
     export_payload = export_compiled_model(out_dir / "best_checkpoint", compiled_dir)
