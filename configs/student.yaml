@@ -24,7 +24,7 @@ training:
 
 loss:
   one_step_weight: 1.0
-  rollout_weight: 0.01
+  rollout_weight: 0.02
   rollout_train_horizon: 40
   multi_rollout_horizons:
   rollout_loss_type: huber
