@@ -12,7 +12,7 @@ training:
   batch_size: 256
   updates: 50000
   smoke_updates: 120
-  train_sequence_length: 96
+  train_sequence_length: 111
   learning_rate: 0.5e-5
   grad_clip_norm: 10.0
   eval_every: 200
