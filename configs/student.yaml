@@ -25,8 +25,8 @@ training:
 loss:
   one_step_weight: 1.0
   rollout_weight: 0.000001
-  rollout_train_horizon: 120
-  multi_rollout_horizons:
+  rollout_train_horizon: 130
+  multi_rollout_horizons: [30,60,120]
   rollout_loss_type: smooth_l1
   smooth_l1_beta: 1.0
   vpt_surrogate_weight: 0.00
