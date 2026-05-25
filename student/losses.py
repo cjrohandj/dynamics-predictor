@@ -143,8 +143,10 @@ def rollout_loss(
     targets = sub_states[:, warmup_steps + 1 : warmup_steps + 1 + horizon]
     pred_norm = normalizer.normalize_obs(preds)
     target_norm = normalizer.normalize_obs(targets)
-    if loss_type == "huber":
+    if loss_type in {"smooth_l1", "huber"}:
         return F.smooth_l1_loss(pred_norm, target_norm, beta=float(huber_beta))
+    if loss_type != "mse":
+        raise ValueError(f"Unknown rollout_loss_type {loss_type!r}. Expected 'mse' or 'smooth_l1'.")
     return F.mse_loss(pred_norm, target_norm)
 
 
@@ -217,7 +219,7 @@ def multi_rollout_loss(
             warmup_steps=warmup_steps,
             horizon=h,
             loss_type=str(loss_cfg.get("rollout_loss_type", "mse")),
-            huber_beta=float(loss_cfg.get("huber_beta", 1.0)),
+            huber_beta=float(loss_cfg.get("smooth_l1_beta", loss_cfg.get("huber_beta", 1.0))),
         )
         for h in horizons
     ]

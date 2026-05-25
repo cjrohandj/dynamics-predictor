@@ -9,26 +9,26 @@ model:
   use_gru: false
 
 training:
-  batch_size: 256
-  updates: 50000
+  batch_size: 128
+  updates: 8000
   smoke_updates: 120
-  train_sequence_length: 111
-  learning_rate: 0.5e-5
-  grad_clip_norm: 10.0
-  eval_every: 200
+  train_sequence_length: 256
+  learning_rate: 2e-4
+  grad_clip_norm: 5.0
+  eval_every: 250
   smoke_eval_every: 20
-  val_horizon: 300
-  max_val_windows: 128
+  val_horizon: 1000
+  max_val_windows: 256
   checkpoint_metric: val/VPT80@0.25
   checkpoint_mode: max
 
 loss:
   one_step_weight: 1.0
   rollout_weight: 0.000001
-  rollout_train_horizon: 100
+  rollout_train_horizon: 120
   multi_rollout_horizons:
-  rollout_loss_type: huber
-  huber_beta: 1.0
+  rollout_loss_type: smooth_l1
+  smooth_l1_beta: 1.0
   vpt_surrogate_weight: 0.00
   vpt_surrogate_horizon: 43
   vpt_threshold: 0.25
